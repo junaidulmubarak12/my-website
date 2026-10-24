@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Apple Grower Survey | Seb Bagwan Survey</title>
+<style>
+  :root { --green:#1f4d36; --dark:#153827; --paper:#f5f7f4; --line:#d5ddd6; --ink:#1c2420; --muted:#5d6b63; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font:17px/1.5 "Segoe UI","Noto Sans Devanagari",Arial,sans-serif; }
+  header { background:var(--dark); color:#fff; padding:18px 16px; text-align:center; }
+  header h1 { margin:0; font-size:1.4rem; }
+  main { max-width:640px; margin:0 auto; padding:14px; }
+  .intro, .q { background:#fff; border:1px solid var(--line); border-radius:10px; padding:14px; margin-bottom:12px; }
+  .intro p { margin:0 0 8px; }
+  .q > b { display:block; margin-bottom:8px; }
+  .q small, .intro small { display:block; color:var(--muted); font-size:.95rem; }
+  .opt { display:flex; align-items:center; gap:10px; border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-bottom:6px; cursor:pointer; }
+  .opt input { width:22px; height:22px; flex:none; accent-color:var(--green); }
+  .opt:has(input:checked) { border-color:var(--green); background:#eaf3ed; }
+  input[type=text], textarea { width:100%; padding:10px; border:1px solid var(--line); border-radius:8px; font:inherit; }
+  .other { margin-top:6px; }
+  button { width:100%; padding:14px; margin-top:6px; font:inherit; font-weight:700; border-radius:10px; cursor:pointer; border:2px solid var(--green); }
+  #send { background:var(--green); color:#fff; }
+  #copy { background:#fff; color:var(--green); }
+  button:focus-visible, input:focus-visible, textarea:focus-visible { outline:3px solid #f0b429; outline-offset:2px; }
+  #msg { text-align:center; color:var(--muted); margin:10px 0 30px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Apple Grower Survey</h1>
+  <div>Seb Bagwan Survey</div>
+</header>
+
+<main>
+  <div class="intro">
+    <p>Assalamu alaikum! I am Junaid, a student. I have a project that, by the help of Allah, will inshallah help the people of Kashmir. To make it truly useful, please tell me about your orchard and your problems. I am not selling anything. It takes 3 minutes.</p>
+    <small>Assalamu alaikum! Main Junaid hoon, ek student. Mere paas ek project hai jo Allah ki madad se, inshallah, Kashmir ke logon ke kaam aayega. Use sach mein kaam ka banane ke liye kripya apne bagh aur apni pareshaniyon ke baare mein bataiye. Main kuch bech nahi raha hoon. Isme 3 minute lagenge.</small>
+  </div>
+
+  <form id="form"></form>
+
+  <button id="send" type="button">Send my answers on WhatsApp<br><small style="color:#fff">Mere jawab WhatsApp par bhejein</small></button>
+  <button id="copy" type="button">Copy my answers / Jawab copy karein</button>
+  <div id="msg"></div>
+</main>
+
+<script>
+// ====== CHANGE THIS: your WhatsApp number with country code, no + and no spaces ======
+const MY_NUMBER = "91XXXXXXXXXX";
+
+const QUESTIONS = [
+  { id: "name", type: "text", en: "Your name (optional)", hi: "Aapka naam (zaroori nahi)" },
+  { id: "place", type: "text", en: "Village / place", hi: "Gaon / jagah" },
+  { id: "trees", type: "one", en: "How many apple trees do you have?", hi: "Aapke paas seb ke kitne ped hain?",
+    opts: [["Less than 100", "100 se kam"], ["100 to 500", "100 se 500"], ["More than 500", "500 se zyada"]] },
+  { id: "loss", type: "one", en: "What caused the biggest loss last year?", hi: "Pichle saal sabse zyada nuksan kisse hua?",
+    opts: [["Disease", "Bimari"], ["Insects / mites", "Keede / mite"], ["Hailstorm", "Ole (ola-vrishti)"], ["Rain / weather", "Baarish / mausam"]], other: true },
+  { id: "problem", type: "many", en: "Which problems trouble you? (tick all)", hi: "Kaun si pareshani aati hai? (sab chunein)",
+    opts: [["Black spots on leaves or fruit (scab)", "Patton ya phal par kaale dhabbe"], ["Leaves falling early", "Patte jaldi girna"],
+           ["White powder on leaves", "Patton par safed powder"], ["Insects / mites / woolly aphid", "Keede / mite / unni aphid"],
+           ["Root or trunk rot", "Jad ya tane ka sadna"]], other: true },
+  { id: "decide", type: "many", en: "How do you decide what and when to spray? (tick all)", hi: "Kaun si dawa aur kab chhidakni hai, kaise tay karte hain? (sab chunein)",
+    opts: [["My own experience", "Apna anubhav"], ["Government spray schedule", "Sarkari spray schedule"], ["Shopkeeper / dealer", "Dukandaar / dealer"],
+           ["Other growers / neighbours", "Dusre bagwan / padosi"], ["WhatsApp / YouTube", "WhatsApp / YouTube"], ["Horticulture officer", "Bagwani adhikari"]] },
+  { id: "fail", type: "one", en: "Has a spray ever failed or damaged your crop?", hi: "Kya kabhi spray beasar raha ya fasal ko nuksan hua?",
+    opts: [["Yes", "Haan"], ["No", "Nahi"], ["Not sure", "Pata nahi"]] },
+  { id: "help", type: "many", en: "What help do you want most? (tick all)", hi: "Aapko sabse zyada kis madad ki zaroorat hai? (sab chunein)",
+    opts: [["When to spray", "Spray kab karein"], ["Identify disease from a photo", "Photo se bimari pehchanna"], ["Weather advice before spraying", "Spray se pehle mausam ki salah"],
+           ["Medicine names and quantity", "Dawa ka naam aur matra"], ["Record of my sprays", "Spray ka record"]], other: true },
+  { id: "phone", type: "one", en: "Which phone do you have?", hi: "Aapke paas kaun sa phone hai?",
+    opts: [["Smartphone, internet in the orchard", "Smartphone, bagh mein internet"], ["Smartphone, internet only at home / village", "Smartphone, internet sirf ghar / gaon mein"], ["No smartphone", "Smartphone nahi hai"]] },
+  { id: "lang", type: "one", en: "Which language is easiest for you?", hi: "Aapke liye kaun si bhasha aasan hai?",
+    opts: [["Kashmiri", "Koshur"], ["Hinglish", "Roman mein Hindi, jaise yeh page"], ["Hindi", "Hindi"], ["English", "Angrezi"]], other: true },
+  { id: "more", type: "long", en: "Anything else you want to tell me? (optional)", hi: "Kuch aur batana chahte hain? (zaroori nahi)" }
+];
+
+const form = document.getElementById("form");
+form.innerHTML = QUESTIONS.map((q, n) => {
+  const head = `<b>${n + 1}. ${q.en}<small>${q.hi}</small></b>`;
+  let body = "";
+  if (q.type === "text") body = `<input type="text" name="${q.id}">`;
+  else if (q.type === "long") body = `<textarea name="${q.id}" rows="3"></textarea>`;
+  else {
+    const kind = q.type === "one" ? "radio" : "checkbox";
+    body = q.opts.map(o => `<label class="opt"><input type="${kind}" name="${q.id}" value="${o[0]}"><span>${o[0]}<small>${o[1]}</small></span></label>`).join("");
+    if (q.other) body += `<input class="other" type="text" name="${q.id}_other" placeholder="Other / Kuch aur (yahan likhein)">`;
+  }
+  return `<div class="q">${head}${body}</div>`;
+}).join("");
+
+function collect() {
+  const lines = ["Apple Grower Survey"];
+  let answered = 0;
+  QUESTIONS.forEach(q => {
+    let ans = [];
+    if (q.type === "text" || q.type === "long") {
+      const v = form.elements[q.id].value.trim();
+      if (v) ans.push(v);
+    } else {
+      form.querySelectorAll(`input[name="${q.id}"]:checked`).forEach(i => ans.push(i.value));
+      if (q.other) {
+        const o = form.elements[q.id + "_other"].value.trim();
+        if (o) ans.push("Other: " + o);
+      }
+    }
+    if (ans.length) answered++;
+    lines.push(`${q.en}\n=> ${ans.join(", ") || "-"}`);
+  });
+  return { text: lines.join("\n\n"), answered };
+}
+
+function say(t) { document.getElementById("msg").textContent = t; }
+
+document.getElementById("send").addEventListener("click", () => {
+  const r = collect();
+  if (!r.answered) { say("Please answer at least one question. / Kripya kam se kam ek sawal ka jawab dein."); return; }
+  if (MY_NUMBER.includes("X")) { say("The WhatsApp number is not set yet. Use the Copy button and send the answers manually."); return; }
+  window.location.href = "https://wa.me/" + MY_NUMBER + "?text=" + encodeURIComponent(r.text);
+});
+
+document.getElementById("copy").addEventListener("click", async () => {
+  const r = collect();
+  try { await navigator.clipboard.writeText(r.text); say("Copied. Paste it in WhatsApp. / Copy ho gaya. WhatsApp mein paste karein."); }
+  catch (e) { say("Could not copy. Please send the answers by WhatsApp button."); }
+});
+</script>
+</body>
+</html>
